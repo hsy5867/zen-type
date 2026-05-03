@@ -1,0 +1,82 @@
+[project]
+name = "zen-type"
+version = "2.0.2"
+description = "A Zen-like AI voice input tool: push-to-talk, Groq Whisper STT, multi-provider LLM polish, auto-paste to foreground window."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+    { name = "zen-type" },
+]
+keywords = ["voice", "dictation", "whisper", "groq", "llm", "speech-to-text"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Sound/Audio :: Speech",
+]
+
+dependencies = [
+    "sounddevice>=0.4.6",
+    "numpy>=1.24.0",
+    "keyboard>=0.13.5",
+    "pyperclip>=1.8.2",
+    "pyautogui>=0.9.54",
+    "pystray>=0.19.5",
+    "Pillow>=10.0.0",
+    "openai>=1.30.0",
+    "anthropic>=0.28.0",
+    "requests>=2.31.0",
+    "pywebview>=5.0",
+]
+
+[project.optional-dependencies]
+windows = [
+    "pywin32>=306",
+]
+local = [
+    "faster-whisper>=1.0.0",
+]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-mock>=3.12.0",
+    "ruff>=0.4.0",
+]
+build = [
+    "pyinstaller>=6.0",
+]
+
+[project.scripts]
+zen-type = "zen_type.app:main"
+
+[project.urls]
+Homepage = "https://github.com/"
+Issues = "https://github.com/"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/zen_type"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/zen_type/ui/settings.html" = "zen_type/ui/settings.html"
+"src/zen_type/assets/mic_reference.png" = "zen_type/assets/mic_reference.png"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

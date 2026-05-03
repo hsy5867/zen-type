@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>zen-type · 設定</title>
+<style>
+  :root {
+    /* Coffee-tone palette — light/dark steps separate layers */
+    /* Latte palette — warm & bright, easy on the eyes (not glaring white) */
+    --bg:          #f3e6cc; /* warm foam — app background              */
+    --bg-soft:     #ecdcbc; /* slightly deeper for gradient depth      */
+    --surface:     #fbf3df; /* paper cream — cards float on bg         */
+    --surface-2:   #ead9b5; /* oat milk — card title bar               */
+    --surface-3:   #dcc7a0; /* mocha — secondary btn / hover           */
+    --border:      #bfa373; /* café au lait hairline                   */
+    --border-soft: #d8c39b; /* subtle separator inside cards           */
+    --text:        #3e2a17; /* dark roast — readable & warm            */
+    --text-dim:    #8a6d48; /* medium roast muted                      */
+    --accent:      #a8672f; /* rich caramel — buttons & highlights     */
+    --accent-hover:#c27c40; /* caramel lit                             */
+    --success:     #6e8b48; /* herbal olive green                      */
+    --danger:      #b35335; /* warm terracotta                         */
+    --warn:        #c78a1e; /* honey amber                             */
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, "Segoe UI", "Noto Sans TC", sans-serif;
+    background:
+      radial-gradient(1200px 600px at 20% -10%, var(--bg-soft) 0%, transparent 60%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    user-select: none;
+  }
+  input, textarea, select { user-select: text; }
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 120px;
+  }
+  header h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+  }
+  header p {
+    color: var(--text-dim);
+    margin: 0 0 24px;
+    font-size: 13px;
+  }
+  .tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .tab {
+    padding: 10px 14px;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .tab:hover { color: var(--text); }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .card {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 0;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(101, 65, 30, 0.12), 0 1px 2px rgba(101, 65, 30, 0.08);
+    overflow: hidden;
+  }
+  .card h3 {
+    margin: 0;
+    padding: 12px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--accent);
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+  }
+  .card > :not(h3) { padding-left: 18px; padding-right: 18px; }
+  .card > :not(h3):first-of-type { padding-top: 14px; }
+  .card > :not(h3):last-child { padding-bottom: 16px; }
+  .row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 0;
+  }
+  .row + .row { border-top: 1px solid var(--border-soft); }
+  label {
+    color: var(--text-dim);
+    font-size: 13px;
+    flex: 0 0 160px;
+  }
+  input[type="text"], input[type="password"], select, textarea {
+    flex: 1;
+    background: #fdf8e9;
+    color: var(--text);
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    transition: border-color 120ms, box-shadow 120ms;
+  }
+  textarea { min-height: 80px; resize: vertical; }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(168, 103, 47, 0.18);
+  }
+  .toggle { display: flex; align-items: center; gap: 8px; flex: 1; color: var(--text); }
+  .toggle input[type="checkbox"] { accent-color: var(--accent); }
+  .btn {
+    background: var(--accent);
+    color: #fff8e8;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 120ms, transform 80ms, box-shadow 120ms;
+    box-shadow: 0 1px 3px rgba(101, 65, 30, 0.2);
+  }
+  .btn:hover { background: var(--accent-hover); box-shadow: 0 2px 6px rgba(101, 65, 30, 0.25); }
+  .btn:active { transform: translateY(1px); box-shadow: 0 1px 2px rgba(101, 65, 30, 0.15); }
+  .btn.secondary {
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-weight: 500;
+    box-shadow: none;
+  }
+  .btn.secondary:hover { background: var(--surface-3); box-shadow: 0 1px 3px rgba(101, 65, 30, 0.15); }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+  .footer {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background:
+      linear-gradient(180deg, transparent 0%, var(--bg) 45%);
+    padding: 20px 24px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .status {
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-left: auto;
+  }
+  .status.ok { color: var(--success); }
+  .status.err { color: var(--danger); }
+  .status.warn { color: var(--warn); }
+  .hint { color: var(--text-dim); font-size: 12px; margin-top: 4px; line-height: 1.5; }
+  .tag {
+    display: inline-block;
+    padding: 3px 10px;
+    background: var(--surface-3);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    margin: 2px 4px 2px 0;
+    font-size: 12px;
+    color: var(--text);
+  }
+  .tag button {
+    background: none; border: none; color: var(--text-dim);
+    cursor: pointer; margin-left: 4px; padding: 0;
+  }
+  .tag button:hover { color: var(--danger); }
+
+  /* Level meter */
+  .meter-wrap {
+    width: 100%;
+    padding: 12px 0 4px;
+  }
+  .meter-bar {
+    position: relative;
+    height: 16px;
+    background: #e8d7b0;
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: inset 0 1px 2px rgba(101, 65, 30, 0.15);
+  }
+  .meter-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg,
+      var(--success) 0%,
+      var(--success) 60%,
+      var(--warn) 80%,
+      var(--danger) 95%);
+    transition: width 60ms linear;
+  }
+  .meter-peak {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    left: 0%;
+    transition: left 120ms linear;
+    box-shadow: 0 0 4px rgba(168, 103, 47, 0.5);
+  }
+  .meter-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-dim);
+    font-size: 11px;
+    margin-top: 4px;
+  }
+  .mic-dot {
+    display: inline-block;
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--text-dim);
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .mic-dot.active { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+  /* Hotkey capture input */
+  .hk-input {
+    flex: 1;
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .hk-display {
+    flex: 1;
+    padding: 8px 12px;
+    background: #fdf8e9;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    font-family: "Cascadia Code", Consolas, monospace;
+    font-size: 13px;
+    color: var(--text);
+    min-height: 18px;
+  }
+  .hk-display.recording {
+    border-color: var(--danger);
+    background: rgba(195, 83, 53, 0.08);
+    box-shadow: 0 0 0 3px rgba(195, 83, 53, 0.15);
+    color: var(--danger);
+  }
+  .hk-display.empty { color: var(--text-dim); font-style: italic; }
+
+  .row.muted { opacity: 0.55; }
+  .row.muted label::after {
+    content: " · 暫未啟用";
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+
+  code { background: var(--surface-2); padding: 1px 4px; border-radius: 3px; font-size: 11.5px; }
+
+  /* Vocabulary list */
+  .vocab-box {
+    max-height: 280px;
+    overflow-y: auto;
+    background: #fdf8e9;
+    border: 1px solid var(--border-soft);
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 12.5px;
+    line-height: 1.8;
+  }
+  .vocab-box .vocab-empty { color: var(--text-dim); font-style: italic; }
+  .vocab-box .vocab-term {
+    display: inline-block;
+    padding: 2px 10px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-soft);
+    border-radius: 12px;
+    margin: 2px 3px;
+    color: var(--text);
+    font-size: 12px;
+  }
+  .vocab-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: nowrap;
+  }
+  .vocab-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .vocab-info .hint {
+    margin: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .path-link {
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 11.5px;
+    color: var(--accent);
+    cursor: pointer;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .path-link:hover {
+    border-color: var(--accent);
+    background: var(--surface-3);
+  }
+  .vocab-count {
+    color: var(--accent);
+    font-weight: 600;
+    font-size: 12px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🎤 zen-type</h1>
+    <p>AI 語音輸入工具 · 本地設定</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab active" data-panel="keys">🔑 API 金鑰</button>
+    <button class="tab" data-panel="mic">🎙 麥克風</button>
+    <button class="tab" data-panel="stt">📝 語音辨識</button>
+    <button class="tab" data-panel="llm">⚡ LLM 潤稿</button>
+    <button class="tab" data-panel="modes">🎯 模式與快捷鍵</button>
+    <button class="tab" data-panel="templates">🧩 情境模板</button>
+    <button class="tab" data-panel="dict">📖 詞彙</button>
+    <button class="tab" data-panel="general">⚙ 一般</button>
+  </div>
+
+  <!-- API Keys -->
+  <div class="panel active" id="panel-keys">
+    <div class="card">
+      <h3>API 金鑰</h3>
+      <div class="row">
+        <label>Groq</label>
+        <input type="password" id="key-groq" placeholder="gsk_..." />
+      </div>
+      <div class="row">
+        <label>OpenAI</label>
+        <input type="password" id="key-openai" placeholder="sk-..." />
+      </div>
+      <div class="row">
+        <label>Anthropic</label>
+        <input type="password" id="key-anthropic" placeholder="sk-ant-..." />
+      </div>
+      <div class="row">
+        <label>Ollama Endpoint</label>
+        <input type="text" id="key-ollama" placeholder="http://localhost:11434" />
+      </div>
+      <p class="hint">金鑰僅存於本機 config.json，不會上傳任何伺服器。</p>
+    </div>
+  </div>
+
+  <!-- Microphone -->
+  <div class="panel" id="panel-mic">
+    <div class="card">
+      <h3>🎙 麥克風來源</h3>
+      <div class="row">
+        <label>輸入裝置</label>
+        <select id="audioInputDevice">
+          <option value="">(系統預設)</option>
+        </select>
+        <button class="btn small secondary" id="refresh-devices">重新掃描</button>
+      </div>
+      <p class="hint" id="device-info">—</p>
+    </div>
+    <div class="card">
+      <h3>🔊 音量測試</h3>
+      <p class="hint">
+        按「開始測試」後對麥克風說話，綠→黃→紅代表音量由低到高。
+        正常對話應落在綠區中段；若無反應，請檢查 Windows 麥克風權限或換個裝置。
+      </p>
+      <div class="row">
+        <label><span class="mic-dot" id="mic-dot"></span><span id="mic-label">未啟動</span></label>
+        <button class="btn small" id="toggle-meter">開始測試</button>
+        <button class="btn small secondary" id="reset-peak">清除 Peak</button>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-bar">
+          <div class="meter-fill" id="meter-fill"></div>
+          <div class="meter-peak" id="meter-peak"></div>
+        </div>
+        <div class="meter-labels">
+          <span>-60 dB</span><span>-30 dB</span><span>0 dB</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STT -->
+  <div class="panel" id="panel-stt">
+    <div class="card">
+      <h3>語音辨識</h3>
+      <div class="row">
+        <label>STT 供應商</label>
+        <select id="sttProvider">
+          <option value="groq">Groq (推薦)</option>
+          <option value="openai">OpenAI</option>
+          <option value="local">本地 Whisper</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>模型</label>
+        <input type="text" id="sttModel" />
+      </div>
+      <div class="row">
+        <label>語言</label>
+        <select id="language">
+          <option value="auto">自動偵測</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="zh-CN">簡體中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- LLM -->
+  <div class="panel" id="panel-llm">
+    <div class="card">
+      <h3>LLM 潤稿</h3>
+      <div class="row">
+        <label>LLM 供應商</label>
+        <select id="llmProvider">
+          <option value="groq">Groq</option>
+          <option value="openai">OpenAI</option>
+          <option value="anthropic">Anthropic</option>
+          <option value="ollama">Ollama (本地)</option>
+        </select>
+      </div>
+      <div class="row">
+        <label>模型</label>
+        <input type="text" id="llmModel" />
+      </div>
+      <div class="row">
+        <label>潤稿 Prompt (Dictate)</label>
+        <textarea id="polishPrompt"></textarea>
+      </div>
+      <div class="row">
+        <label>改寫 Prompt (Transform)</label>
+        <textarea id="transformPrompt"></textarea>
+      </div>
+      <div class="row">
+        <label>問答 Prompt (Ask)</label>
+        <textarea id="askPrompt"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modes & Hotkeys -->
+  <div class="panel" id="panel-modes">
+    <div class="card">
+      <h3>🎯 三模式快捷鍵</h3>
+      <p class="hint">
+        <strong>預設 Pause 鍵</strong>，也可改用 F-鍵（如 F5/F8/F9…），都不會跟系統快捷鍵或中文輸入法衝突。
+      </p>
+      <div class="row">
+        <label>觸發方式</label>
+        <div class="toggle">
+          <select id="hotkeyMode" style="flex:0 0 auto; min-width:220px;">
+            <option value="toggle">切換（按一次開始，再按一次結束）</option>
+            <option value="push_to_talk">按住（按住講話，放開結束）</option>
+          </select>
+        </div>
+      </div>
+      <p class="hint" style="color: var(--danger);">
+        ⚠ <strong>避免以下組合</strong>：<br>
+        • <code>Alt+Space</code> — Windows 視窗系統選單會優先處理（在記事本等會失效）<br>
+        • <code>Ctrl+Space</code> / <code>Ctrl+Shift</code> / <code>Ctrl+Shift+Space</code> — 中文輸入法切換<br>
+        • <code>Alt+字母</code> — 應用程式功能表捷徑<br>
+        • <code>Win+任何鍵</code> — Windows 系統保留
+      </p>
+      <div class="row">
+        <label>Dictate（聽寫）</label>
+        <div class="hk-input">
+          <div class="hk-display empty" data-mode="dictate">（未設定）</div>
+          <button class="btn small secondary hk-record" data-mode="dictate">錄製</button>
+          <button class="btn small secondary hk-clear" data-mode="dictate">清除</button>
+        </div>
+        <div class="toggle">
+          <input type="checkbox" id="enable-dictate" />
+          <span>啟用</span>
+        </div>
+      </div>
+      <p class="hint">
+        按「錄製」後直接在鍵盤按下您想要的鍵，會立即套用。
+      </p>
+    </div>
+    <div class="card">
+      <h3>輸出模式</h3>
+      <div class="row">
+        <label>output mode</label>
+        <select id="outputMode">
+          <option value="auto_paste">自動貼上（Ctrl+V）</option>
+          <option value="clipboard">僅複製到剪貼簿</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Templates -->
+  <div class="panel" id="panel-templates">
+    <div class="card">
+      <h3>情境模板</h3>
+      <p class="hint">根據目前前景視窗自動切換語氣。關閉「上下文感知」則一律用 default。</p>
+      <div class="row">
+        <label>Email</label>
+        <input type="text" id="tpl-email" />
+      </div>
+      <div class="row">
+        <label>Chat</label>
+        <input type="text" id="tpl-chat" />
+      </div>
+      <div class="row">
+        <label>Code</label>
+        <input type="text" id="tpl-code" />
+      </div>
+      <div class="row">
+        <label>Document</label>
+        <input type="text" id="tpl-doc" />
+      </div>
+      <div class="row">
+        <label>Default</label>
+        <input type="text" id="tpl-default" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Dictionary (loaded from refer_doc/*.txt) -->
+  <div class="panel" id="panel-dict">
+    <div class="card">
+      <h3>📘 中文名詞</h3>
+      <div class="vocab-meta" style="margin: 10px 0 6px;">
+        <div class="vocab-info">
+          <span class="vocab-count" id="count-chinese">—</span>
+          <span class="hint">檔案：<a class="path-link" id="path-chinese" title="按一下以外部編輯器開啟">—</a></span>
+        </div>
+        <button class="btn small secondary vocab-open" data-which="chinese">開啟</button>
+        <button class="btn small secondary" id="reload-vocab">重新載入</button>
+      </div>
+      <p class="hint">
+        檔案內 <code>#</code> 開頭的行為分類註解（不送給 Whisper）；要新增／修改詞彙直接編輯檔案後按「重新載入」。
+      </p>
+      <div id="vocab-chinese" class="vocab-box">—</div>
+    </div>
+    <div class="card">
+      <h3>📗 英文名詞</h3>
+      <div class="vocab-meta" style="margin: 10px 0 6px;">
+        <div class="vocab-info">
+          <span class="vocab-count" id="count-english">—</span>
+          <span class="hint">檔案：<a class="path-link" id="path-english" title="按一下以外部編輯器開啟">—</a></span>
+        </div>
+        <button class="btn small secondary vocab-open" data-which="english">開啟</button>
+      </div>
+      <div id="vocab-english" class="vocab-box">—</div>
+    </div>
+    <div class="card">
+      <h3>ℹ 字元預算說明</h3>
+      <p class="hint">
+        Groq Whisper 的 prompt 上限為 <strong>896 UTF-8 bytes</strong>。中文每字約 3 bytes、英文每字母 1 byte。
+        清單前面的詞會優先送入，超過預算的詞會被自動省略（不會造成錯誤）。
+      </p>
+    </div>
+  </div>
+
+  <!-- General -->
+  <div class="panel" id="panel-general">
+    <div class="card">
+      <h3>一般設定</h3>
+      <div class="row">
+        <label>上下文感知</label>
+        <div class="toggle">
+          <input type="checkbox" id="contextAware" />
+          <span>依前景視窗切換模板</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>音效提示</label>
+        <div class="toggle">
+          <input type="checkbox" id="playSounds" />
+          <span>播放錄音開始/結束音效</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>開機自動啟動</label>
+        <div class="toggle">
+          <input type="checkbox" id="autoStart" />
+          <span>（Windows）</span>
+        </div>
+      </div>
+      <div class="row">
+        <label>設定檔位置</label>
+        <button class="btn small secondary" id="open-config-folder">在檔案總管開啟</button>
+      </div>
+      <div class="row">
+        <label>版本</label>
+        <span class="hint" id="version">—</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn" id="save-btn">儲存設定</button>
+    <button class="btn secondary" id="reload-btn">重新載入</button>
+    <span class="status" id="status">等待初始化…</span>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let state = {};
+let api = null;     // set after pywebviewready
+let meterTimer = null;
+let meterRunning = false;
+
+// ---------- Hotkey capture ----------
+// Maps JS KeyboardEvent.code / key to keyboard-lib combo-part names.
+const KEY_CODE_MAP = {
+  "ControlLeft": "left ctrl", "ControlRight": "right ctrl",
+  "AltLeft": "left alt",     "AltRight": "right alt",
+  "ShiftLeft": "left shift", "ShiftRight": "right shift",
+  "MetaLeft": "left windows","MetaRight": "right windows",
+  "Space": "space", "Enter": "enter", "Escape": "esc", "Backspace": "backspace",
+  "Tab": "tab", "CapsLock": "caps lock", "ScrollLock": "scroll lock",
+  "Pause": "pause", "Insert": "insert", "Delete": "delete",
+  "Home": "home", "End": "end", "PageUp": "page up", "PageDown": "page down",
+  "ArrowUp": "up", "ArrowDown": "down", "ArrowLeft": "left", "ArrowRight": "right",
+  "NumLock": "num lock", "PrintScreen": "print screen",
+};
+// F1..F24
+for (let i = 1; i <= 24; i++) KEY_CODE_MAP["F" + i] = "f" + i;
+// Digits + letters
+for (let i = 0; i <= 9; i++) KEY_CODE_MAP["Digit" + i] = String(i);
+for (let c = 65; c <= 90; c++) KEY_CODE_MAP["Key" + String.fromCharCode(c)] = String.fromCharCode(c + 32);
+// Punctuation
+Object.assign(KEY_CODE_MAP, {
+  "Minus": "-", "Equal": "=", "BracketLeft": "[", "BracketRight": "]",
+  "Backslash": "\\", "Semicolon": ";", "Quote": "'", "Backquote": "`",
+  "Comma": ",", "Period": ".", "Slash": "/",
+});
+// Numpad keys — distinguish from main keyboard equivalents
+Object.assign(KEY_CODE_MAP, {
+  "NumpadAdd": "add",           // Numpad +
+  "NumpadSubtract": "subtract", // Numpad -
+  "NumpadMultiply": "num *",    // Numpad *
+  "NumpadDivide": "divide",     // Numpad /
+  "NumpadDecimal": "decimal",   // Numpad .
+  "NumpadEnter": "num enter",
+});
+for (let i = 0; i <= 9; i++) KEY_CODE_MAP["Numpad" + i] = "num " + i;
+
+function humanise(part) {
+  // Capitalise for display only; config stores canonical lowercase form.
+  return part.split(" ").map(w => w[0] ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+}
+function displayCombo(combo) {
+  if (!combo) return "";
+  return combo.split("+").map(humanise).join(" + ");
+}
+
+let hkCaptureMode = null;  // "dictate" | "transform" | "ask" | null
+let hkCapturePressed = new Set();  // ordered via insertion
+let hkCaptureOrder = [];
+
+function startHotkeyCapture(mode, el) {
+  if (hkCaptureMode) stopHotkeyCapture(false);
+  hkCaptureMode = mode;
+  hkCapturePressed = new Set();
+  hkCaptureOrder = [];
+  el.classList.add("recording");
+  el.classList.remove("empty");
+  el.textContent = "按下任意鍵…（Esc 取消）";
+}
+
+function stopHotkeyCapture(save) {
+  if (!hkCaptureMode) return;
+  const mode = hkCaptureMode;
+  const el = document.querySelector(`.hk-display[data-mode="${mode}"]`);
+  hkCaptureMode = null;
+  el.classList.remove("recording");
+  if (save && hkCaptureOrder.length > 0) {
+    const combo = hkCaptureOrder.join("+");
+    state.hotkeys = state.hotkeys || {};
+    state.hotkeys[mode] = combo;
+    el.textContent = displayCombo(combo);
+    el.classList.remove("empty");
+  } else {
+    const existing = (state.hotkeys || {})[mode] || "";
+    if (existing) { el.textContent = displayCombo(existing); el.classList.remove("empty"); }
+    else { el.textContent = "（未設定）"; el.classList.add("empty"); }
+  }
+  hkCapturePressed.clear();
+  hkCaptureOrder = [];
+}
+
+document.addEventListener("keydown", (e) => {
+  if (!hkCaptureMode) return;
+  e.preventDefault(); e.stopPropagation();
+  if (e.key === "Escape") { stopHotkeyCapture(false); return; }
+
+  const mapped = KEY_CODE_MAP[e.code] || e.key.toLowerCase();
+  if (!mapped || hkCapturePressed.has(mapped)) return;
+  hkCapturePressed.add(mapped);
+  hkCaptureOrder.push(mapped);
+
+  const el = document.querySelector(`.hk-display[data-mode="${hkCaptureMode}"]`);
+  el.textContent = hkCaptureOrder.map(humanise).join(" + ") + " ⏺";
+}, true);
+
+document.addEventListener("keyup", (e) => {
+  if (!hkCaptureMode) return;
+  e.preventDefault(); e.stopPropagation();
+  // When the user releases a key while still capturing, finalise immediately
+  // (mirrors Push-to-Talk behaviour).
+  if (hkCaptureOrder.length > 0) stopHotkeyCapture(true);
+}, true);
+
+function renderHotkeys(hotkeys) {
+  for (const mode of ["dictate", "transform", "ask"]) {
+    const el = document.querySelector(`.hk-display[data-mode="${mode}"]`);
+    if (!el) continue;
+    const v = hotkeys[mode];
+    if (v) { el.textContent = displayCombo(v); el.classList.remove("empty"); }
+    else { el.textContent = "（未設定）"; el.classList.add("empty"); }
+  }
+}
+
+// ---------- pywebview bootstrap ----------
+function whenApiReady() {
+  return new Promise((resolve) => {
+    if (window.pywebview && window.pywebview.api) return resolve(window.pywebview.api);
+    window.addEventListener("pywebviewready", () => resolve(window.pywebview.api), { once: true });
+  });
+}
+
+// ---------- Vocabulary ----------
+function renderVocab(terms, targetId, countId) {
+  const box = $(targetId);
+  const counter = $(countId);
+  box.innerHTML = "";
+  if (!terms || terms.length === 0) {
+    const s = document.createElement("span");
+    s.className = "vocab-empty";
+    s.textContent = "（無，檔案不存在或為空）";
+    box.appendChild(s);
+    if (counter) counter.textContent = "0 個詞";
+    return;
+  }
+  for (const w of terms) {
+    const t = document.createElement("span");
+    t.className = "vocab-term";
+    t.textContent = w;
+    box.appendChild(t);
+  }
+  if (counter) counter.textContent = `${terms.length} 個詞`;
+}
+
+async function loadVocabulary() {
+  try {
+    const v = await api.get_vocabulary();
+    renderVocab(v.chinese, "vocab-chinese", "count-chinese");
+    renderVocab(v.english, "vocab-english", "count-english");
+    $("path-chinese").textContent = (v.paths && v.paths.chinese) || "—";
+    $("path-english").textContent = (v.paths && v.paths.english) || "—";
+  } catch (e) {
+    setStatus("無法載入詞彙：" + e.message, "err");
+  }
+}
+
+// ---------- Rendering helpers ----------
+async function renderAudioDevices(currentValue) {
+  const sel = $("audioInputDevice");
+  const devices = await api.list_audio_devices();
+  sel.innerHTML = '<option value="">(系統預設)</option>';
+  for (const d of devices) {
+    const o = document.createElement("option");
+    o.value = String(d.index);
+    const mark = d.is_default ? " ★" : "";
+    o.textContent = `[${d.index}] ${d.name}${mark}`;
+    o.dataset.channels = d.channels;
+    o.dataset.sr = d.sample_rate;
+    sel.appendChild(o);
+  }
+  if (currentValue != null && currentValue !== "") {
+    sel.value = String(currentValue);
+  }
+  updateDeviceInfo();
+}
+
+function updateDeviceInfo() {
+  const sel = $("audioInputDevice");
+  const o = sel.options[sel.selectedIndex];
+  if (!o || !o.value) { $("device-info").textContent = "使用作業系統預設輸入裝置。"; return; }
+  $("device-info").textContent = `通道: ${o.dataset.channels || "?"} · 裝置預設取樣率: ${o.dataset.sr || "?"} Hz`;
+}
+
+// ---------- Config load/save ----------
+async function loadConfig() {
+  state = await api.get_config();
+
+  const k = state.apiKeys || {};
+  $("key-groq").value = k.groq || "";
+  $("key-openai").value = k.openai || "";
+  $("key-anthropic").value = k.anthropic || "";
+  $("key-ollama").value = k.ollama || "";
+
+  $("sttProvider").value = state.sttProvider || "groq";
+  $("sttModel").value = state.sttModel || "";
+  $("language").value = state.language || "auto";
+
+  $("llmProvider").value = state.llmProvider || "groq";
+  $("llmModel").value = state.llmModel || "";
+  $("polishPrompt").value = state.polishPrompt || "";
+  $("transformPrompt").value = state.transformPrompt || "";
+  $("askPrompt").value = state.askPrompt || "";
+
+  renderHotkeys(state.hotkeys || {});
+  const me = state.modesEnabled || {};
+  $("enable-dictate").checked = me.dictate !== false;
+  $("outputMode").value = state.outputMode || "auto_paste";
+  $("hotkeyMode").value = state.hotkeyMode || "toggle";
+
+  const t = state.contextTemplates || {};
+  $("tpl-email").value = t.email || "";
+  $("tpl-chat").value = t.chat || "";
+  $("tpl-code").value = t.code || "";
+  $("tpl-doc").value = t.doc || "";
+  $("tpl-default").value = t.default || "";
+
+  $("contextAware").checked = !!state.contextAware;
+  $("playSounds").checked = state.playSounds !== false;
+  $("autoStart").checked = !!state.autoStart;
+
+  await renderAudioDevices(state.audioInputDevice);
+  await loadVocabulary();
+  $("version").textContent = await api.get_version();
+
+  setStatus("已載入 ✓", "ok");
+}
+
+function collectConfig() {
+  const dev = $("audioInputDevice").value;
+  return {
+    ...state,
+    apiKeys: {
+      groq: $("key-groq").value.trim(),
+      openai: $("key-openai").value.trim(),
+      anthropic: $("key-anthropic").value.trim(),
+      ollama: $("key-ollama").value.trim(),
+    },
+    sttProvider: $("sttProvider").value,
+    sttModel: $("sttModel").value.trim(),
+    language: $("language").value,
+    llmProvider: $("llmProvider").value,
+    llmModel: $("llmModel").value.trim(),
+    polishPrompt: $("polishPrompt").value,
+    transformPrompt: $("transformPrompt").value,
+    askPrompt: $("askPrompt").value,
+    hotkeys: state.hotkeys || {},
+    modesEnabled: {
+      dictate: $("enable-dictate").checked,
+      transform: false,
+      ask: false,
+    },
+    outputMode: $("outputMode").value,
+    hotkeyMode: $("hotkeyMode").value,
+    contextTemplates: {
+      email: $("tpl-email").value,
+      chat: $("tpl-chat").value,
+      code: $("tpl-code").value,
+      doc: $("tpl-doc").value,
+      default: $("tpl-default").value,
+    },
+    dictionary: [],
+    contextAware: $("contextAware").checked,
+    playSounds: $("playSounds").checked,
+    autoStart: $("autoStart").checked,
+    audioInputDevice: dev === "" ? null : (isNaN(Number(dev)) ? dev : Number(dev)),
+  };
+}
+
+async function saveConfig() {
+  setStatus("儲存中…");
+  try {
+    const j = await api.save_config(collectConfig());
+    if (j.ok) {
+      const warn = (j.warnings || []).length;
+      setStatus(warn ? `已儲存（${warn} 項警告）` : "已儲存 ✓", warn ? "warn" : "ok");
+    } else {
+      setStatus("儲存失敗：" + (j.error || "?"), "err");
+    }
+  } catch (e) {
+    setStatus("錯誤：" + e.message, "err");
+  }
+}
+
+function setStatus(msg, cls="") {
+  const s = $("status");
+  s.textContent = msg;
+  s.className = "status " + cls;
+}
+
+// ---------- Level meter ----------
+async function startMeter() {
+  if (meterRunning) return;
+  const dev = $("audioInputDevice").value;
+  const deviceArg = dev === "" ? null : Number(dev);
+  const resp = await api.start_level_meter(deviceArg);
+  if (!resp.ok) {
+    setStatus("無法啟動音量測試：" + resp.error, "err");
+    return;
+  }
+  meterRunning = true;
+  $("toggle-meter").textContent = "停止測試";
+  $("mic-dot").classList.add("active");
+  $("mic-label").textContent = "測試中…";
+  meterTimer = setInterval(pollLevel, 80);
+}
+
+async function stopMeter() {
+  if (!meterRunning) return;
+  clearInterval(meterTimer); meterTimer = null;
+  await api.stop_level_meter();
+  meterRunning = false;
+  $("toggle-meter").textContent = "開始測試";
+  $("mic-dot").classList.remove("active");
+  $("mic-label").textContent = "已停止";
+  $("meter-fill").style.width = "0%";
+}
+
+async function pollLevel() {
+  try {
+    const r = await api.get_level();
+    $("meter-fill").style.width = (r.level * 100).toFixed(1) + "%";
+    $("meter-peak").style.left = (r.peak * 100).toFixed(1) + "%";
+  } catch (e) { /* ignore transient errors */ }
+}
+
+// ---------- Wire up UI ----------
+document.querySelectorAll(".tab").forEach(btn => {
+  btn.onclick = async () => {
+    document.querySelectorAll(".tab").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    $("panel-" + btn.dataset.panel).classList.add("active");
+    // Stop meter when leaving mic tab
+    if (btn.dataset.panel !== "mic" && meterRunning) await stopMeter();
+  };
+});
+
+$("save-btn").onclick = saveConfig;
+$("reload-btn").onclick = () => { stopMeter(); loadConfig(); };
+
+$("reload-vocab").onclick = async () => {
+  await loadVocabulary();
+  setStatus("詞彙已重新載入", "ok");
+};
+
+async function openVocabFile(which) {
+  try {
+    const r = await api.open_vocab_file(which);
+    if (!r.ok) setStatus("無法開啟檔案：" + (r.error || "?"), "err");
+    else setStatus("已請求開啟檔案", "ok");
+  } catch (e) {
+    setStatus("錯誤：" + e.message, "err");
+  }
+}
+
+document.querySelectorAll(".vocab-open").forEach(btn => {
+  btn.onclick = () => openVocabFile(btn.dataset.which);
+});
+
+$("path-chinese").onclick = () => openVocabFile("chinese");
+$("path-english").onclick = () => openVocabFile("english");
+
+// Hotkey record/clear buttons
+document.querySelectorAll(".hk-record").forEach(btn => {
+  btn.onclick = () => {
+    const mode = btn.dataset.mode;
+    const el = document.querySelector(`.hk-display[data-mode="${mode}"]`);
+    startHotkeyCapture(mode, el);
+  };
+});
+document.querySelectorAll(".hk-clear").forEach(btn => {
+  btn.onclick = () => {
+    const mode = btn.dataset.mode;
+    state.hotkeys = state.hotkeys || {};
+    state.hotkeys[mode] = "";
+    const el = document.querySelector(`.hk-display[data-mode="${mode}"]`);
+    el.textContent = "（未設定）";
+    el.classList.add("empty");
+  };
+});
+
+
+$("audioInputDevice").addEventListener("change", async () => {
+  updateDeviceInfo();
+  if (meterRunning) { await stopMeter(); await startMeter(); }
+});
+
+$("refresh-devices").onclick = async () => {
+  const current = $("audioInputDevice").value;
+  await renderAudioDevices(current === "" ? null : Number(current));
+  setStatus("裝置清單已更新", "ok");
+};
+
+$("toggle-meter").onclick = async () => {
+  if (meterRunning) await stopMeter(); else await startMeter();
+};
+
+$("reset-peak").onclick = async () => { await api.reset_peak(); };
+
+$("open-config-folder").onclick = async () => {
+  await api.open_config_folder();
+};
+
+window.addEventListener("beforeunload", () => {
+  if (meterRunning) api.stop_level_meter();
+});
+
+// ---------- Init ----------
+(async () => {
+  api = await whenApiReady();
+  await loadConfig();
+})();
+</script>
+</body>
+</html>

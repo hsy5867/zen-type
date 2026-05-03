@@ -1,0 +1,19 @@
+# zen-type Recognition Assist — Common English Terms
+#
+# Usage:
+#   • One term per line
+#   • Lines starting with # are treated as category comments and ignored
+#   • Blank lines are allowed
+#   • Groq Whisper limits prompt to 896 UTF-8 bytes total; English terms are
+#     roughly 1 byte/char, so ~40 terms fit safely. Surplus terms are skipped.
+
+# ── AI Tools ──
+Claude Code
+ChatGPT
+Gemini
+Whisper
+
+# ── Dev ──
+VS Code
+Python
+GitHub

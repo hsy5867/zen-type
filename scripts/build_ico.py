@@ -29,32 +29,41 @@ WHITE = (255, 255, 255)
 
 ICO_PATH = ROOT / "src" / "zen_type" / "assets" / "zen-type.ico"
 PREVIEW_PATH = ROOT / "build" / "icon_preview.png"
-SIZES = [16, 24, 32, 48, 64, 128, 256]
+# Includes the standard Windows shell sizes plus intermediates (20/40/96) so
+# HiDPI scaling factors (125%/150%) also pick a same-resolution sub-image
+# instead of stretching one of the standard sizes.
+SIZES = [16, 20, 24, 32, 40, 48, 64, 96, 128, 256]
+# Render every sub-image at 8× the target size first, then LANCZOS-downsample
+# so the disc and mic edges are properly anti-aliased even at 16/24px.
+SUPERSAMPLE = 8
 
 
 def render_icon(size: int) -> Image.Image:
-    raw = get_glyph(WHITE, size * 4)
-    bbox = raw.getbbox()
-    mic = raw.crop(bbox)
-
     if size <= 24:
         ratio, disc = 0.78, ACCENT_BRIGHT
     elif size <= 32:
-        ratio, disc = 0.72, ACCENT_BRIGHT
+        ratio, disc = 0.74, ACCENT_BRIGHT
     elif size <= 48:
         ratio, disc = 0.72, ACCENT
     else:
         ratio, disc = 0.66, ACCENT
 
-    mic_h = max(6, int(size * ratio))
+    big = size * SUPERSAMPLE
+    img = Image.new("RGBA", (big, big), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.ellipse((0, 0, big - 1, big - 1), fill=disc)
+
+    # Draw mic at supersampled resolution: render the glyph itself even larger
+    # and crop to its tight visible bbox so 'mic_h' refers to the real mic.
+    raw = get_glyph(WHITE, big)
+    bbox = raw.getbbox()
+    mic = raw.crop(bbox)
+    mic_h = max(8, int(big * ratio))
     mic_w = max(1, int(mic.size[0] * mic_h / mic.size[1]))
     mic = mic.resize((mic_w, mic_h), Image.LANCZOS)
+    img.alpha_composite(mic, ((big - mic_w) // 2, (big - mic_h) // 2))
 
-    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    d.ellipse((0, 0, size - 1, size - 1), fill=disc)
-    img.alpha_composite(mic, ((size - mic_w) // 2, (size - mic_h) // 2))
-    return img
+    return img.resize((size, size), Image.LANCZOS)
 
 
 def main() -> None:

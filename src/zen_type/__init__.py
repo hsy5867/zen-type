@@ -1,11 +1,10 @@
 """zen-type — AI voice input tool."""
 
-__version__ = "2.0.3"
+__version__ = "2.0.4"
 __release_notes__ = (
-    "2.0.3  — settings window UI redesigned per Claude Design (Latte palette): "
-    "left sidebar navigation with inline SVG icons replacing top-tab bar, "
-    "brand block with mic glyph and live version, status-mini panel showing "
-    "the active Dictate hotkey, custom toggle switches, refined card/row "
-    "spacing and typography. All config keys, hotkey capture, level meter, "
-    "and pywebview JS bindings preserved unchanged."
+    "2.0.4  — overlay pill mid-indicator now matches Claude Design: rotating "
+    "arc spinner during TRANSCRIBING / POLISHING / INJECTING (each in the "
+    "state's saturated colour), and an alert triangle badge to the right of "
+    "the label in the ERROR state. IDLE keeps the static 5-dot row; "
+    "RECORDING keeps the live 7-bar waveform."
 )

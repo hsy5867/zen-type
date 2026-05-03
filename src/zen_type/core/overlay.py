@@ -141,6 +141,56 @@ def _draw_wave(draw, cx: int, cy: int, n: int, bar_w: int, gap: int,
         )
 
 
+def _draw_spinner(draw, cx: int, cy: int, radius: int, thickness: int,
+                  angle_deg: float, color: tuple[int, int, int],
+                  card_fill: tuple[int, int, int]) -> None:
+    """Draw a 3/4 rotating arc spinner — track ring + bright leading arc.
+
+    The chroma-key compositor uses a binary alpha mask, so we cannot fade the
+    track via alpha; instead blend the saturated state colour toward the card
+    fill to get a soft track that still passes the binary threshold.
+    """
+    bbox = (cx - radius, cy - radius, cx + radius, cy + radius)
+    # Blend ~20% colour, 80% card_fill — keeps it pale but fully opaque
+    track = tuple(
+        int(card_fill[i] * 0.78 + color[i] * 0.22) for i in range(3)
+    )
+    draw.arc(bbox, start=0, end=360, fill=track, width=thickness)
+    # Leading arc — 270° sweep starting from the rotating angle
+    start = int(angle_deg) % 360
+    end = (start + 270) % 360
+    if end >= start:
+        draw.arc(bbox, start=start, end=end, fill=color, width=thickness)
+    else:
+        draw.arc(bbox, start=start, end=360, fill=color, width=thickness)
+        draw.arc(bbox, start=0, end=end, fill=color, width=thickness)
+
+
+def _draw_alert(draw, cx: int, cy: int, size: int,
+                color: tuple[int, int, int]) -> None:
+    """Triangle with exclamation mark — matches the design's ERROR badge."""
+    h = size
+    w = int(size * 1.1)
+    # Equilateral-ish triangle, slightly rounded vertices
+    top = (cx, cy - h // 2)
+    bl = (cx - w // 2, cy + h // 2)
+    br = (cx + w // 2, cy + h // 2)
+    draw.polygon([top, bl, br], outline=color, fill=None, width=2)
+    # Exclamation mark
+    bar_w = max(2, size // 9)
+    bar_top = cy - h // 6
+    bar_bot = cy + h // 8
+    draw.rectangle(
+        (cx - bar_w // 2, bar_top, cx - bar_w // 2 + bar_w, bar_bot),
+        fill=color,
+    )
+    dot_r = max(1, size // 14)
+    draw.ellipse(
+        (cx - dot_r, cy + h // 5 - dot_r, cx + dot_r, cy + h // 5 + dot_r),
+        fill=color,
+    )
+
+
 def _compute_layout() -> dict:
     """Pre-compute pill width once based on the longest CJK label."""
     from PIL import Image, ImageDraw
@@ -151,6 +201,10 @@ def _compute_layout() -> dict:
     MID_W = 50
     GAP_MID_TEXT = 14
     RIGHT_PAD = 18
+    # Reserve space for the ERROR alert badge to the right of the label so the
+    # pill width doesn't change between states.
+    ALERT_GAP = 8
+    ALERT_SIZE = 18
     disc_r = (H - 10) // 2
 
     tmp = Image.new("RGBA", (1, 1))
@@ -161,17 +215,28 @@ def _compute_layout() -> dict:
         bbox = td.textbbox((0, 0), label, font=f)
         max_tw = max(max_tw, bbox[2] - bbox[0])
         max_th = max(max_th, bbox[3] - bbox[1])
-    W = LEFT_PAD + 2 * disc_r + GAP_DISC_MID + MID_W + GAP_MID_TEXT + max_tw + RIGHT_PAD
+    W = (LEFT_PAD + 2 * disc_r + GAP_DISC_MID + MID_W + GAP_MID_TEXT
+         + max_tw + ALERT_GAP + ALERT_SIZE + RIGHT_PAD)
     return {
         "W": W, "H": H, "font": f,
         "LEFT_PAD": LEFT_PAD, "RIGHT_PAD": RIGHT_PAD,
         "GAP_DISC_MID": GAP_DISC_MID, "MID_W": MID_W,
         "GAP_MID_TEXT": GAP_MID_TEXT,
+        "ALERT_GAP": ALERT_GAP, "ALERT_SIZE": ALERT_SIZE,
         "disc_r": disc_r, "max_tw": max_tw, "max_th": max_th,
     }
 
 
-def _render_pill(state: PipelineState, levels: list[float], layout: dict):
+_SPINNER_STATES = (
+    PipelineState.TRANSCRIBING,
+    PipelineState.POLISHING,
+    PipelineState.INJECTING,
+)
+_ALERT_COLOR = (220, 53, 69)  # #DC3545 — ERROR accent matches design
+
+
+def _render_pill(state: PipelineState, levels: list[float], layout: dict,
+                 frame: int = 0):
     """Render the pill as RGBA, then composite onto chroma magenta with a
     binary alpha mask so Tk's ``-transparentcolor`` keys out the surroundings."""
     from PIL import Image, ImageDraw
@@ -205,12 +270,18 @@ def _render_pill(state: PipelineState, levels: list[float], layout: dict):
     from zen_type.core.mic_glyph import paste_mic
     paste_mic(img, cx_mic, cy_mic, int(disc_r * 2 * 0.70), mic_color)
 
-    # Middle: dots when idle/processing, waveform during RECORDING
+    # Middle: dots / waveform / spinner per state — matches Claude Design jsx
     mid_cx = cx_mic + disc_r + layout["GAP_DISC_MID"] + layout["MID_W"] // 2
     mid_cy = H // 2
     if state == PipelineState.RECORDING:
         _draw_wave(d, mid_cx, mid_cy, n=_WAVE_BARS, bar_w=4, gap=3,
                    max_h=14, levels=levels, color=_WAVE_REC_COLOR)
+    elif state in _SPINNER_STATES:
+        spinner_color = _DOT_COLOR.get(state, _DOT_COLOR[PipelineState.IDLE])
+        # 12°/frame at 50ms tick = ~360°/1.5s — calmer than the design's .8s.
+        _draw_spinner(d, mid_cx, mid_cy, radius=11, thickness=3,
+                      angle_deg=frame * 12, color=spinner_color,
+                      card_fill=card_fill)
     else:
         _draw_dots(d, mid_cx, mid_cy, n=5, dot_r=3, gap=6,
                    color=_DOT_COLOR.get(state, _DOT_COLOR[PipelineState.IDLE]))
@@ -222,6 +293,14 @@ def _render_pill(state: PipelineState, levels: list[float], layout: dict):
     th = bbox[3] - bbox[1]
     text_y = (H - th) // 2 - bbox[1]
     d.text((text_x, text_y), label, font=f, fill=_LABEL_COLOR)
+
+    # ERROR state: alert triangle to the right of the label
+    if state == PipelineState.ERROR:
+        tw = bbox[2] - bbox[0]
+        alert_cx = text_x + tw + layout["ALERT_GAP"] + layout["ALERT_SIZE"] // 2
+        alert_cy = H // 2
+        _draw_alert(d, alert_cx, alert_cy, size=layout["ALERT_SIZE"],
+                    color=_ALERT_COLOR)
 
     # Composite onto chroma magenta with binary alpha mask
     bg = Image.new("RGB", img.size, _CHROMA_RGB)
@@ -253,6 +332,7 @@ class Overlay:
         self._stop_flag = threading.Event()
         self._state = PipelineState.IDLE
         self._levels: list[float] = [0.0] * _WAVE_BARS
+        self._frame = 0   # spinner animation tick
         self._drag_x = 0
         self._drag_y = 0
 
@@ -418,6 +498,12 @@ class Overlay:
         except queue.Empty:
             pass
 
+        # Tick the spinner while in a processing state — forces a redraw
+        # every poll so the arc rotates smoothly.
+        if self._state in _SPINNER_STATES:
+            self._frame = (self._frame + 1) % 360
+            dirty = True
+
         if dirty:
             self._update_image()
 
@@ -426,7 +512,8 @@ class Overlay:
     def _update_image(self) -> None:
         from PIL import ImageTk
         try:
-            img = _render_pill(self._state, self._levels, self._layout)
+            img = _render_pill(self._state, self._levels, self._layout,
+                               frame=self._frame)
         except Exception as exc:  # noqa: BLE001
             logger.exception("overlay render failed: %s", exc)
             return

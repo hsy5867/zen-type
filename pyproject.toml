@@ -1,6 +1,6 @@
 [project]
 name = "zen-type"
-version = "2.0.4"
+version = "2.0.5"
 description = "A Zen-like AI voice input tool: push-to-talk, Groq Whisper STT, multi-provider LLM polish, auto-paste to foreground window."
 readme = "README.md"
 requires-python = ">=3.11"

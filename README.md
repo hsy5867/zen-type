@@ -108,7 +108,7 @@ uv run python build.py
 ```
 
 **打包後產物**：
-- `dist\zen-type-2.0.4.exe` — 約 40 MB 的單檔 exe，可直接複製到其他 Windows 電腦執行
+- `dist\zen-type-2.0.5.exe` — 約 40 MB 的單檔 exe，可直接複製到其他 Windows 電腦執行
 - **不含任何 API Key**：設定值存在目標電腦的 `%APPDATA%\zen-type\config.json`，新機器首次啟動會建立空白設定
 - **詞彙檔自動遷移**：首次啟動會把內建的 `refer_doc\*.txt` 複製到 `%APPDATA%\zen-type\refer_doc\`，使用者可自由編輯
 
@@ -117,13 +117,13 @@ uv run python build.py
 - Edge WebView2 執行期（Windows 11 內建；Windows 10 絕大多數已裝）
 
 **其他電腦首次執行步驟**：
-1. 複製 `zen-type-2.0.4.exe` 過去，雙擊執行
+1. 複製 `zen-type-2.0.5.exe` 過去，雙擊執行
 2. 自動開啟設定視窗，填入 Groq API Key
 3. 按 **Pause** 鍵即可開始語音輸入
 
 ## 版本
 
-當前：**2.0.4** — 詳見 `zen_type.__release_notes__`
+當前：**2.0.5** — 詳見 `zen_type.__release_notes__`
 
 ## 授權
 

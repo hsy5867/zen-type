@@ -1,139 +1,101 @@
-"""Mic glyph loader.
+"""Mic glyph rendered from the Claude Design SVG paths.
 
-The mic shape is taken VERBATIM from the user's reference image
-(``zen_type/assets/mic_reference.png``) rather than re-drawn with PIL
-primitives. This guarantees the silhouette matches the reference exactly —
-no more iterating on `arc_w`, `body_h`, `gap` numerics that never quite
-look right.
+The design's ``ZTMicGlyph`` (refer_doc/claude_design/.../shared.jsx) is a
+24×24 viewBox SVG with three primitives, all using stroke-width 2 with
+round caps:
 
-Usage::
+1. Filled rounded rectangle — the mic body capsule
+   ``<rect x=9 y=2.5 w=6 h=11 rx=3 fill=color>``
+2. Stroked half-circle arc — the U-shaped support
+   ``<path d="M5.5 11 a6.5 6.5 0 0 0 13 0">``
+3. Stroked vertical stem — connector to the stand
+   ``<path d="M12 17.5 v3.5">``
 
-    from zen_type.core.mic_glyph import paste_mic
-    paste_mic(parent_img, cx, cy, glyph_height, color)
-
-The reference file is loaded once and cached. Tinted/resized variants
-are cached per (color, glyph_height) so repeated overlay/tray renders
-don't redo the alpha conversion.
+We draw those primitives with PIL at supersampled resolution, then resize
+down with LANCZOS for smooth edges. Cached per ``(color, glyph_height)``.
 """
 
 from __future__ import annotations
 
-import sys
-from pathlib import Path
 from threading import Lock
 
 
-def _resolve_asset_path() -> Path:
-    """Locate ``mic_reference.png`` whether running from source or PyInstaller
-    onefile (which extracts the package under ``sys._MEIPASS``)."""
-    base = Path(getattr(sys, "_MEIPASS", None)
-                or Path(__file__).resolve().parent.parent.parent)
-    # frozen: <_MEIPASS>/zen_type/assets/mic_reference.png
-    # source: <repo>/src/zen_type/assets/mic_reference.png
-    candidates = [
-        base / "zen_type" / "assets" / "mic_reference.png",
-        Path(__file__).resolve().parent.parent / "assets" / "mic_reference.png",
-    ]
-    for p in candidates:
-        if p.exists():
-            return p
-    raise FileNotFoundError(
-        f"mic_reference.png not found. Looked in: {[str(c) for c in candidates]}"
-    )
+# === SVG geometry (Claude Design shared.jsx) ================================
+_VIEWBOX = 24.0
+_STROKE_W = 2.0
+_SUPERSAMPLE = 4
+
+_BODY = (9.0, 2.5, 15.0, 13.5)   # x0, y0, x1, y1
+_BODY_RADIUS = 3.0
+_ARC_CX, _ARC_CY, _ARC_R = 12.0, 11.0, 6.5
+_STEM_X, _STEM_TOP, _STEM_BOT = 12.0, 17.5, 21.0
 
 
-_silhouette_lock = Lock()
-_silhouette = None      # tuple[Image.Image, int, int]: (alpha mask, w, h)
+_cache_lock = Lock()
 _tinted_cache: dict[tuple[tuple[int, int, int], int], object] = {}
 
 
-def _load_silhouette():
-    """Return (alpha_image_L, width, height) cropped tightly to the mic
-    silhouette. ``alpha_image_L`` is a single-channel mask where 255 = mic ink,
-    0 = background.
-
-    Two structural transforms are applied to the raw reference so the rendered
-    glyph reads correctly at small sizes:
-
-    1. **Body floodfill** — the reference draws the mic body as a hollow
-       capsule outline. We floodfill its interior so the body is solid (the
-       user wants the body to read as a filled silhouette, not a ring).
-    2. **Stroke dilation** — at the native 1254×1254 resolution, strokes are
-       ~35 px thick. After resizing to a 36-px-tall overlay glyph that becomes
-       ~1.5 px and looks anaemic. We dilate the source mask before caching so
-       strokes survive the downscale at all target sizes.
-    """
-    global _silhouette
-    with _silhouette_lock:
-        if _silhouette is not None:
-            return _silhouette
-        from PIL import Image, ImageDraw, ImageFilter
-        path = _resolve_asset_path()
-        src = Image.open(path).convert("L")
-        # Binarise: dark (mic ink) → 255, light (bg) → 0
-        bw = src.point(lambda v: 255 if v < 128 else 0).convert("L")
-
-        # Floodfill body interior. The body is a closed capsule; its interior
-        # is a connected pool of bg (0) pixels surrounded by mic ink (255).
-        # Seed at ~22% down from the silhouette top, on the centre line —
-        # always inside the body for any reasonable mic icon.
-        bbox = bw.getbbox()
-        if bbox is None:
-            raise RuntimeError("mic_reference.png has no dark pixels")
-        seed_x = (bbox[0] + bbox[2]) // 2
-        seed_y = bbox[1] + (bbox[3] - bbox[1]) * 22 // 100
-        # floodfill replaces the bg pool reachable from (seed_x, seed_y) with
-        # mic ink (255). It stops at the body outline because outline pixels
-        # already equal 255 and the threshold (10) treats anything ≥ 10 from
-        # the seed value (0) as a boundary.
-        ImageDraw.floodfill(bw, (seed_x, seed_y), value=255, thresh=10)
-
-        # Dilate strokes so they remain readable after downscale. MaxFilter(N)
-        # adds (N-1)/2 px on each side; 11 → +5 px → strokes ~45 px native →
-        # ~2 px at a 36-px-tall overlay, ~3 px at a 64 px tray.
-        bw = bw.filter(ImageFilter.MaxFilter(11))
-
-        # Re-crop after fill+dilate (silhouette may have grown slightly)
-        bbox = bw.getbbox()
-        cropped = bw.crop(bbox)
-        _silhouette = (cropped, cropped.size[0], cropped.size[1])
-        return _silhouette
+def _draw_round_cap(draw, x: float, y: float, radius: float, fill) -> None:
+    draw.ellipse((x - radius, y - radius, x + radius, y + radius), fill=fill)
 
 
 def get_glyph(color: tuple[int, int, int], glyph_height: int):
     """Return an RGBA Pillow image of the mic recoloured to ``color`` and
-    resized so its height equals ``glyph_height`` (preserves aspect ratio).
-    Cached per (color, glyph_height)."""
-    from PIL import Image
+    sized to ``glyph_height`` × ``glyph_height``. Cached per (color, height)."""
+    from PIL import Image, ImageDraw
 
     key = (color, int(glyph_height))
-    cached = _tinted_cache.get(key)
-    if cached is not None:
-        return cached
+    with _cache_lock:
+        cached = _tinted_cache.get(key)
+        if cached is not None:
+            return cached
 
-    mask, src_w, src_h = _load_silhouette()
-    # Preserve aspect ratio against requested height
-    new_h = max(4, int(glyph_height))
-    new_w = max(1, int(src_w * new_h / src_h))
-    # Use NEAREST when target is very small (≤24px) so thin strokes don't
-    # get blurred to invisibility; LANCZOS otherwise for clean edges.
-    resample = Image.NEAREST if new_h <= 24 else Image.LANCZOS
-    resized_mask = mask.resize((new_w, new_h), resample)
-    # Build RGBA: solid `color` with the mask as alpha channel
-    glyph = Image.new("RGBA", (new_w, new_h), color + (0,))
-    solid = Image.new("RGBA", (new_w, new_h), color + (255,))
-    glyph.paste(solid, (0, 0), resized_mask)
-    _tinted_cache[key] = glyph
-    return glyph
+    target = max(8, int(glyph_height))
+    canvas = target * _SUPERSAMPLE
+    scale = canvas / _VIEWBOX
+    sw = _STROKE_W * scale
+    cap_r = sw / 2.0
+
+    img = Image.new("RGBA", (canvas, canvas), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    fill = color + (255,)
+
+    # 1. Body capsule — filled rounded rectangle
+    bx0, by0, bx1, by1 = (v * scale for v in _BODY)
+    d.rounded_rectangle(
+        (bx0, by0, bx1, by1), radius=_BODY_RADIUS * scale, fill=fill,
+    )
+
+    # 2. Half-circle U arc (bottom half: PIL angles 0°→180° clockwise from east)
+    arc_bbox = (
+        (_ARC_CX - _ARC_R) * scale, (_ARC_CY - _ARC_R) * scale,
+        (_ARC_CX + _ARC_R) * scale, (_ARC_CY + _ARC_R) * scale,
+    )
+    d.arc(arc_bbox, start=0, end=180, fill=fill, width=max(1, int(round(sw))))
+    # Round caps at arc endpoints (5.5, 11) and (18.5, 11)
+    _draw_round_cap(d, (_ARC_CX - _ARC_R) * scale, _ARC_CY * scale, cap_r, fill)
+    _draw_round_cap(d, (_ARC_CX + _ARC_R) * scale, _ARC_CY * scale, cap_r, fill)
+
+    # 3. Vertical stem — pill-shaped (rounded rect with full corner radius
+    #    gives the SVG's round line caps automatically)
+    sx = _STEM_X * scale
+    d.rounded_rectangle(
+        (sx - cap_r, _STEM_TOP * scale, sx + cap_r, _STEM_BOT * scale),
+        radius=cap_r, fill=fill,
+    )
+
+    # Downsample with LANCZOS for clean anti-aliased edges
+    out = img.resize((target, target), Image.LANCZOS)
+
+    with _cache_lock:
+        _tinted_cache[key] = out
+    return out
 
 
 def paste_mic(parent, cx: int, cy: int, glyph_height: int,
               color: tuple[int, int, int]) -> None:
-    """Composite the mic glyph onto ``parent`` (an RGBA Pillow Image)
-    centred on (cx, cy) at the given height in pixels.
-
-    `parent` is expected to be RGBA so alpha compositing works.
-    """
+    """Composite the mic glyph onto ``parent`` (RGBA Pillow image) centred
+    on (cx, cy) at the given height in pixels."""
     glyph = get_glyph(color, glyph_height)
     gw, gh = glyph.size
     parent.alpha_composite(glyph, (cx - gw // 2, cy - gh // 2))

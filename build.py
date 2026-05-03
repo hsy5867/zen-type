@@ -42,10 +42,12 @@ def build(debug_console: bool = False) -> Path:
     # ``;`` is the Windows separator for PyInstaller's --add-data.
     sep = ";" if sys.platform == "win32" else ":"
 
+    icon_path = SRC / "assets" / "zen-type.ico"
     args = [
         sys.executable, "-m", "PyInstaller",
         "--onefile",
         "--name", APP_NAME,
+        f"--icon={icon_path}",
         f"--add-data=src/zen_type/ui/settings.html{sep}zen_type/ui",
         f"--add-data=src/zen_type/assets{sep}zen_type/assets",
         f"--add-data=refer_doc{sep}refer_doc",
